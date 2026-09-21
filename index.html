@@ -76,7 +76,10 @@ async function run(file){
     setTimeout(()=>URL.revokeObjectURL(a.href),1000);
     say("Selesai, file .md sudah terunduh.","ok");
   }catch(e){
-    say("Gagal: "+(e.message||String(e)).trim().split("\n").filter(Boolean).pop(),"err");
+    console.error("Full Error:", e);
+    const lines = (e.message||String(e)).trim().split("\n").filter(Boolean);
+    const lastLine = lines.pop();
+    say("Gagal: "+(lastLine.includes("etc.") && lines.length > 0 ? lines.pop() : lastLine),"err");
   }finally{
     try{py.FS.unlink(path);}catch(_){}
     busy=false; box.classList.remove("off");
