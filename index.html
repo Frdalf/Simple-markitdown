@@ -1,47 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Konversi ke Markdown</title>
-<style>
-:root{--bg:#EEF1F4;--card:#fff;--ink:#22303C;--muted:#5E6B78;--line:#C9D1D9;--accent:#2F55D4;--err:#B3261E;--ok:#1F7A55}
-@media (prefers-color-scheme:dark){:root{--bg:#161B21;--card:#1E252D;--ink:#E4E9EE;--muted:#9AA6B2;--line:#34404C;--accent:#7D9BFF;--err:#F2847B;--ok:#5FCB9A}}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
-  display:grid;place-items:center;padding:1.25rem}
-.box{width:100%;max-width:460px;background:var(--card);border:2px dashed var(--line);border-radius:16px;
-  padding:2.5rem 1.5rem;text-align:center;cursor:pointer}
-.box:hover,.box.over{border-color:var(--accent)}
-.box:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-.box.off{cursor:progress;opacity:.7}
-h1{margin:0 0 .4rem;font-size:1.35rem}
-p{margin:0;color:var(--muted)}
-#msg{margin-top:1.25rem;font-weight:500;color:var(--ink)}
-#msg.err{color:var(--err)} #msg.ok{color:var(--ok)}
-input{display:none}
-</style>
-</head>
-<body>
-<div id="box" class="box off" tabindex="0" role="button">
-  <h1>Pilih atau tarik file ke sini</h1>
-  <p>PDF, Word, PowerPoint, Excel, HTML, CSV, dan lainnya</p>
-  <p id="msg" aria-live="polite">Menyiapkan halaman…</p>
-  <input id="f" type="file" accept=".pdf,.docx,.pptx,.xlsx,.xls,.html,.htm,.csv,.json,.xml,.txt,.epub,.zip">
-</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Konversi ke Markdown</title>
+    <style>
+      :root {
+        --bg: #eef1f4;
+        --card: #fff;
+        --ink: #22303c;
+        --muted: #5e6b78;
+        --line: #c9d1d9;
+        --accent: #2f55d4;
+        --err: #b3261e;
+        --ok: #1f7a55;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #161b21;
+          --card: #1e252d;
+          --ink: #e4e9ee;
+          --muted: #9aa6b2;
+          --line: #34404c;
+          --accent: #7d9bff;
+          --err: #f2847b;
+          --ok: #5fcb9a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 1.25rem;
+      }
+      .box {
+        width: 100%;
+        max-width: 460px;
+        background: var(--card);
+        border: 2px dashed var(--line);
+        border-radius: 16px;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        cursor: pointer;
+      }
+      .box:hover,
+      .box.over {
+        border-color: var(--accent);
+      }
+      .box:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+      }
+      .box.off {
+        cursor: progress;
+        opacity: 0.7;
+      }
+      h1 {
+        margin: 0 0 0.4rem;
+        font-size: 1.35rem;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+      #msg {
+        margin-top: 1.25rem;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      #msg.err {
+        color: var(--err);
+      }
+      #msg.ok {
+        color: var(--ok);
+      }
+      input {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="box" class="box off" tabindex="0" role="button">
+      <h1>Pilih atau tarik file ke sini</h1>
+      <p>PDF, Word, PowerPoint, Excel, HTML, CSV, dan lainnya</p>
+      <p id="msg" aria-live="polite">Menyiapkan halaman…</p>
+      <input
+        id="f"
+        type="file"
+        accept=".pdf,.docx,.pptx,.xlsx,.xls,.html,.htm,.csv,.json,.xml,.txt,.epub,.zip"
+      />
+    </div>
 
-<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
-<script>
-const box=document.getElementById("box"), input=document.getElementById("f"), msg=document.getElementById("msg");
-let py=null, ready=false, busy=false;
-const say=(t,c="")=>{msg.textContent=t;msg.className=c;};
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <script>
+      const box = document.getElementById("box"),
+        input = document.getElementById("f"),
+        msg = document.getElementById("msg");
+      let py = null,
+        ready = false,
+        busy = false;
+      const say = (t, c = "") => {
+        msg.textContent = t;
+        msg.className = c;
+      };
 
-async function boot(){
-  try{
-    py=await loadPyodide();
-    await py.loadPackage(["micropip","lxml","pandas","pillow","cryptography"]);
-    await py.runPythonAsync(`
+      async function boot() {
+        try {
+          py = await loadPyodide();
+          await py.loadPackage([
+            "micropip",
+            "lxml",
+            "pandas",
+            "pillow",
+            "cryptography",
+          ]);
+          await py.runPythonAsync(`
 import sys, types
 m=types.ModuleType("magika")
 class R: status="error"; prediction=None
@@ -58,41 +148,87 @@ from markitdown import MarkItDown
 _md=MarkItDown(enable_plugins=False)
 def convert_file(p): return _md.convert(p).text_content
 `);
-    ready=true; box.classList.remove("off"); say("Siap. Pilih file.");
-  }catch(e){ console.error(e); say("Halaman gagal dimuat. Muat ulang dan coba lagi.","err"); }
-}
+          ready = true;
+          box.classList.remove("off");
+          say("Siap. Pilih file.");
+        } catch (e) {
+          console.error(e);
+          say("Halaman gagal dimuat. Muat ulang dan coba lagi.", "err");
+        }
+      }
 
-async function run(file){
-  if(!ready||busy||!file) return;
-  busy=true; box.classList.add("off"); say("Mengonversi "+file.name+"…");
-  await new Promise(r=>setTimeout(r,30));
-  const path="/tmp/"+file.name.replace(/[\/\\]/g,"_");
-  try{
-    py.FS.writeFile(path,new Uint8Array(await file.arrayBuffer()));
-    const fn=py.globals.get("convert_file"); const text=fn(path); fn.destroy();
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([text],{type:"text/markdown;charset=utf-8"}));
-    a.download=file.name.replace(/\.[^.]+$/,"")+".md"; document.body.append(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-    say("Selesai, file .md sudah terunduh.","ok");
-  }catch(e){
-    console.error("Full Error:", e);
-    const lines = (e.message||String(e)).trim().split("\n").filter(Boolean);
-    const lastLine = lines.pop();
-    say("Gagal: "+(lastLine.includes("etc.") && lines.length > 0 ? lines.pop() : lastLine),"err");
-  }finally{
-    try{py.FS.unlink(path);}catch(_){}
-    busy=false; box.classList.remove("off");
-  }
-}
+      async function run(file) {
+        if (!ready || busy || !file) return;
+        busy = true;
+        box.classList.add("off");
+        say("Mengonversi " + file.name + "…");
+        await new Promise((r) => setTimeout(r, 30));
+        const path = "/tmp/" + file.name.replace(/[\/\\]/g, "_");
+        try {
+          py.FS.writeFile(path, new Uint8Array(await file.arrayBuffer()));
+          const fn = py.globals.get("convert_file");
+          const text = fn(path);
+          fn.destroy();
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(
+            new Blob([text], { type: "text/markdown;charset=utf-8" }),
+          );
+          a.download = file.name.replace(/\.[^.]+$/, "") + ".md";
+          document.body.append(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+          say("Selesai, file .md sudah terunduh.", "ok");
+        } catch (e) {
+          console.error("Full Error:", e);
+          const lines = (e.message || String(e))
+            .trim()
+            .split("\n")
+            .filter(Boolean);
+          const lastLine = lines.pop();
+          say(
+            "Gagal: " +
+              (lastLine.includes("etc.") && lines.length > 0
+                ? lines.pop()
+                : lastLine),
+            "err",
+          );
+        } finally {
+          try {
+            py.FS.unlink(path);
+          } catch (_) {}
+          busy = false;
+          box.classList.remove("off");
+        }
+      }
 
-box.onclick=()=>{ if(ready&&!busy) input.click(); };
-box.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();box.click();} };
-input.onchange=()=>{ run(input.files[0]); input.value=""; };
-["dragenter","dragover"].forEach(t=>box.addEventListener(t,e=>{e.preventDefault();box.classList.add("over");}));
-["dragleave","drop"].forEach(t=>box.addEventListener(t,e=>{e.preventDefault();box.classList.remove("over");}));
-box.addEventListener("drop",e=>run(e.dataTransfer.files[0]));
-boot();
-</script>
-</body>
+      box.onclick = () => {
+        if (ready && !busy) input.click();
+      };
+      box.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          box.click();
+        }
+      };
+      input.onchange = () => {
+        run(input.files[0]);
+        input.value = "";
+      };
+      ["dragenter", "dragover"].forEach((t) =>
+        box.addEventListener(t, (e) => {
+          e.preventDefault();
+          box.classList.add("over");
+        }),
+      );
+      ["dragleave", "drop"].forEach((t) =>
+        box.addEventListener(t, (e) => {
+          e.preventDefault();
+          box.classList.remove("over");
+        }),
+      );
+      box.addEventListener("drop", (e) => run(e.dataTransfer.files[0]));
+      boot();
+    </script>
+  </body>
 </html>
