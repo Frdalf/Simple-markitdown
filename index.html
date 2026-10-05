@@ -170,7 +170,8 @@ failed=[p for p,r in zip(pkgs,res) if isinstance(r,BaseException)]
         step(4, "Memasang MarkItDown…");
         await py.runPythonAsync(`
 import micropip
-await micropip.install("markitdown",deps=False)
+# 0.1.5+ butuh pdfplumber (pypdfium2 native), tidak jalan di Pyodide
+await micropip.install("markitdown==0.1.4",deps=False)
 from markitdown import MarkItDown
 _md=MarkItDown(enable_plugins=False)
 def convert_file(p): return _md.convert(p).text_content
