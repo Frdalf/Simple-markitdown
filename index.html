@@ -91,6 +91,22 @@
       #msg.ok {
         color: var(--ok);
       }
+      #msg {
+        white-space: pre-line;
+      }
+      progress {
+        width: 100%;
+        margin-top: 0.75rem;
+        accent-color: var(--accent);
+      }
+      progress[hidden] {
+        display: none;
+      }
+      #warn {
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--err);
+      }
       input {
         display: none;
       }
@@ -101,38 +117,42 @@
       <h1>Pilih atau tarik file ke sini</h1>
       <p>PDF, Word, PowerPoint, Excel, HTML, CSV, dan lainnya</p>
       <p id="msg" aria-live="polite">Menyiapkan halaman…</p>
+      <progress id="bar" max="1" value="0"></progress>
+      <p id="warn" hidden></p>
       <input
         id="f"
         type="file"
+        multiple
         accept=".pdf,.docx,.pptx,.xlsx,.xls,.html,.htm,.csv,.json,.xml,.txt,.epub,.zip"
       />
     </div>
 
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
-    <script>
-      const box = document.getElementById("box"),
-        input = document.getElementById("f"),
-        msg = document.getElementById("msg");
-      let py = null,
-        ready = false,
-        busy = false;
-      const say = (t, c = "") => {
-        msg.textContent = t;
-        msg.className = c;
-      };
+    <script type="text/worker" id="worker-src">
+      const BASE = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
+      importScripts(BASE + "pyodide.js");
+      let py = null, convert = null;
+      const post = (m) => self.postMessage(m);
+      const step = (n, t) => post({ type: "progress", step: n, total: 4, text: t });
+
+      function errText(e) {
+        const lines = String((e && e.message) || e || "")
+          .trim()
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+        let last = lines.pop() || "Kesalahan tidak diketahui";
+        if (last.includes("etc.") && lines.length) last = lines.pop();
+        return last;
+      }
 
       async function boot() {
-        try {
-          py = await loadPyodide();
-          await py.loadPackage([
-            "micropip",
-            "lxml",
-            "pandas",
-            "pillow",
-            "cryptography",
-          ]);
-          await py.runPythonAsync(`
-import sys, types
+        step(1, "Memuat Python (WebAssembly)…");
+        py = await loadPyodide({ indexURL: BASE });
+        step(2, "Memuat paket inti (lxml, pandas, …)…");
+        await py.loadPackage(["micropip", "lxml", "pandas", "pillow", "cryptography"]);
+        step(3, "Memasang dependensi MarkItDown…");
+        const failed = await py.runPythonAsync(`
+import sys, types, asyncio
 m=types.ModuleType("magika")
 class R: status="error"; prediction=None
 class Magika:
@@ -142,64 +162,151 @@ class Magika:
     def identify_path(s,*a,**k): return R()
 m.Magika=Magika; sys.modules["magika"]=m
 import micropip
-await micropip.install(["markdownify","defusedxml","pdfminer.six","mammoth","python-pptx","openpyxl","xlrd","requests","charset-normalizer","beautifulsoup4","olefile","cobble"],keep_going=True)
+pkgs=["markdownify","defusedxml","pdfminer.six","mammoth","python-pptx","openpyxl","xlrd","requests","charset-normalizer","beautifulsoup4","olefile","cobble"]
+res=await asyncio.gather(*[micropip.install(p) for p in pkgs],return_exceptions=True)
+failed=[p for p,r in zip(pkgs,res) if isinstance(r,BaseException)]
+",".join(failed)
+`);
+        step(4, "Memasang MarkItDown…");
+        await py.runPythonAsync(`
+import micropip
 await micropip.install("markitdown",deps=False)
 from markitdown import MarkItDown
 _md=MarkItDown(enable_plugins=False)
 def convert_file(p): return _md.convert(p).text_content
 `);
-          ready = true;
-          box.classList.remove("off");
-          say("Siap. Pilih file.");
-        } catch (e) {
-          console.error(e);
-          say("Halaman gagal dimuat. Muat ulang dan coba lagi.", "err");
-        }
+        convert = py.globals.get("convert_file");
+        post({ type: "ready", failed: failed ? failed.split(",") : [] });
       }
 
-      async function run(file) {
-        if (!ready || busy || !file) return;
+      self.onmessage = ({ data }) => {
+        const { id, name, buf } = data;
+        const path = "/tmp/" + id + "_" + name.replace(/[\/\\]/g, "_");
+        try {
+          py.FS.writeFile(path, new Uint8Array(buf));
+          post({ type: "done", id, text: convert(path) });
+        } catch (e) {
+          post({ type: "fail", id, error: errText(e) });
+        } finally {
+          try { py.FS.unlink(path); } catch (_) {}
+        }
+      };
+
+      boot().catch((e) => post({ type: "bootfail", error: errText(e) }));
+    </script>
+    <script>
+      const box = document.getElementById("box"),
+        input = document.getElementById("f"),
+        msg = document.getElementById("msg"),
+        bar = document.getElementById("bar"),
+        warn = document.getElementById("warn");
+      let ready = false,
+        busy = false,
+        seq = 0;
+      const queue = [],
+        pending = new Map();
+      const say = (t, c = "") => {
+        msg.textContent = t;
+        msg.className = c;
+      };
+      const setBar = (v) => {
+        bar.hidden = v == null;
+        if (v != null) bar.value = v;
+      };
+
+      const worker = new Worker(
+        URL.createObjectURL(
+          new Blob([document.getElementById("worker-src").textContent], {
+            type: "text/javascript",
+          }),
+        ),
+      );
+
+      worker.onmessage = ({ data: m }) => {
+        if (m.type === "progress") {
+          say(`(${m.step}/${m.total}) ${m.text}`);
+          setBar((m.step - 1) / m.total);
+        } else if (m.type === "ready") {
+          ready = true;
+          setBar(null);
+          box.classList.remove("off");
+          say("Siap. Pilih satu atau beberapa file.");
+          if (m.failed.length) {
+            warn.hidden = false;
+            warn.textContent =
+              "Peringatan: paket gagal dipasang (" +
+              m.failed.join(", ") +
+              "). Beberapa format mungkin tidak bisa dikonversi.";
+          }
+        } else if (m.type === "bootfail") {
+          setBar(null);
+          say("Halaman gagal dimuat: " + m.error + ". Muat ulang dan coba lagi.", "err");
+        } else {
+          const cb = pending.get(m.id);
+          pending.delete(m.id);
+          cb && cb(m);
+        }
+      };
+      worker.onerror = (e) => {
+        console.error(e);
+        say("Halaman gagal dimuat. Muat ulang dan coba lagi.", "err");
+      };
+
+      const convert = (file) =>
+        file.arrayBuffer().then(
+          (buf) =>
+            new Promise((resolve) => {
+              const id = ++seq;
+              pending.set(id, resolve);
+              worker.postMessage({ id, name: file.name, buf }, [buf]);
+            }),
+        );
+
+      function download(name, text) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob([text], { type: "text/markdown;charset=utf-8" }),
+        );
+        a.download = name.replace(/\.[^.]+$/, "") + ".md";
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+
+      async function enqueue(files) {
+        queue.push(...files);
+        if (!ready || busy || !queue.length) return;
         busy = true;
         box.classList.add("off");
-        say("Mengonversi " + file.name + "…");
-        await new Promise((r) => setTimeout(r, 30));
-        const path = "/tmp/" + file.name.replace(/[\/\\]/g, "_");
-        try {
-          py.FS.writeFile(path, new Uint8Array(await file.arrayBuffer()));
-          const fn = py.globals.get("convert_file");
-          const text = fn(path);
-          fn.destroy();
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(
-            new Blob([text], { type: "text/markdown;charset=utf-8" }),
-          );
-          a.download = file.name.replace(/\.[^.]+$/, "") + ".md";
-          document.body.append(a);
-          a.click();
-          a.remove();
-          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-          say("Selesai, file .md sudah terunduh.", "ok");
-        } catch (e) {
-          console.error("Full Error:", e);
-          const lines = (e.message || String(e))
-            .trim()
-            .split("\n")
-            .filter(Boolean);
-          const lastLine = lines.pop();
+        const errors = [];
+        let ok = 0,
+          total = 0;
+        while (queue.length) {
+          const file = queue.shift();
+          total++;
+          say(`Mengonversi ${file.name}… (${total}/${total + queue.length})`);
+          setBar((total - 1) / (total + queue.length));
+          try {
+            const r = await convert(file);
+            if (r.type === "done") {
+              download(file.name, r.text);
+              ok++;
+            } else errors.push(file.name + ": " + r.error);
+          } catch (e) {
+            errors.push(file.name + ": " + (e.message || String(e)));
+          }
+        }
+        setBar(null);
+        if (!errors.length)
+          say(total > 1 ? `Selesai, ${ok} file .md sudah terunduh.` : "Selesai, file .md sudah terunduh.", "ok");
+        else
           say(
-            "Gagal: " +
-              (lastLine.includes("etc.") && lines.length > 0
-                ? lines.pop()
-                : lastLine),
+            (ok ? `${ok} berhasil, ` : "") + `${errors.length} gagal:\n` + errors.join("\n"),
             "err",
           );
-        } finally {
-          try {
-            py.FS.unlink(path);
-          } catch (_) {}
-          busy = false;
-          box.classList.remove("off");
-        }
+        busy = false;
+        box.classList.remove("off");
       }
 
       box.onclick = () => {
@@ -212,7 +319,7 @@ def convert_file(p): return _md.convert(p).text_content
         }
       };
       input.onchange = () => {
-        run(input.files[0]);
+        enqueue([...input.files]);
         input.value = "";
       };
       ["dragenter", "dragover"].forEach((t) =>
@@ -227,8 +334,9 @@ def convert_file(p): return _md.convert(p).text_content
           box.classList.remove("over");
         }),
       );
-      box.addEventListener("drop", (e) => run(e.dataTransfer.files[0]));
-      boot();
+      box.addEventListener("drop", (e) => {
+        if (ready && !busy) enqueue([...e.dataTransfer.files]);
+      });
     </script>
   </body>
 </html>
