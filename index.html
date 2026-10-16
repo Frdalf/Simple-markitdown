@@ -9,25 +9,40 @@
     <title>Konversi ke Markdown</title>
     <style>
       :root {
-        --bg: #eef1f4;
-        --card: #fff;
-        --ink: #22303c;
+        --bg: #f3f5f8;
+        --bg-glow: #dfe6ff;
+        --card: #ffffff;
+        --card-2: #f7f8fb;
+        --ink: #1b2430;
         --muted: #5e6b78;
-        --line: #c9d1d9;
-        --accent: #2f55d4;
-        --err: #b3261e;
+        --line: #dde3ea;
+        --accent: #3b5bdb;
+        --accent-ink: #ffffff;
+        --accent-soft: #e8edff;
+        --err: #c0392b;
+        --err-soft: #fdecea;
         --ok: #1f7a55;
+        --ok-soft: #e3f4ec;
+        --shadow: 0 1px 2px rgb(16 24 40 / 0.05),
+          0 8px 24px rgb(16 24 40 / 0.06);
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #161b21;
-          --card: #1e252d;
-          --ink: #e4e9ee;
-          --muted: #9aa6b2;
-          --line: #34404c;
+          --bg: #12161c;
+          --bg-glow: #1c2440;
+          --card: #1b2129;
+          --card-2: #161b22;
+          --ink: #e6ebf0;
+          --muted: #98a4b0;
+          --line: #2c3540;
           --accent: #7d9bff;
+          --accent-ink: #0f1420;
+          --accent-soft: #232c4a;
           --err: #f2847b;
+          --err-soft: #3a2224;
           --ok: #5fcb9a;
+          --ok-soft: #1c3229;
+          --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
         }
       }
       * {
@@ -35,97 +50,446 @@
       }
       html,
       body {
-        height: 100%;
         margin: 0;
       }
       body {
-        background: var(--bg);
+        min-height: 100vh;
+        background:
+          radial-gradient(900px 420px at 50% -120px, var(--bg-glow), transparent 70%),
+          var(--bg);
         color: var(--ink);
         font:
           16px/1.5 system-ui,
           -apple-system,
           "Segoe UI",
           sans-serif;
+        padding: 3rem 1rem 2rem;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      svg {
+        flex: none;
+      }
+
+      /* Header */
+      header {
+        text-align: center;
+        margin-bottom: 1.75rem;
+      }
+      .logo {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 0.9rem;
+        border-radius: 14px;
+        background: var(--accent);
+        color: var(--accent-ink);
         display: grid;
         place-items: center;
-        padding: 1.25rem;
+        box-shadow: var(--shadow);
       }
-      .box {
-        width: 100%;
-        max-width: 460px;
+      h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 4vw, 1.9rem);
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0.4rem auto 0;
+        max-width: 30rem;
+        color: var(--muted);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.9rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        background: var(--ok-soft);
+        color: var(--ok);
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      /* Drop zone */
+      .drop {
         background: var(--card);
         border: 2px dashed var(--line);
-        border-radius: 16px;
+        border-radius: 20px;
         padding: 2.5rem 1.5rem;
         text-align: center;
         cursor: pointer;
+        box-shadow: var(--shadow);
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.15s;
       }
-      .box:hover,
-      .box.over {
+      .drop:hover,
+      .drop.over {
         border-color: var(--accent);
       }
-      .box:focus-visible {
+      .drop.over {
+        background: var(--accent-soft);
+        transform: scale(1.01);
+      }
+      .drop:focus-visible {
         outline: 3px solid var(--accent);
         outline-offset: 3px;
       }
-      .box.off {
-        cursor: progress;
-        opacity: 0.7;
+      .drop-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
       }
-      h1 {
-        margin: 0 0 0.4rem;
-        font-size: 1.35rem;
-      }
-      p {
+      .drop h2 {
         margin: 0;
+        font-size: 1.1rem;
+      }
+      .drop p {
+        margin: 0.3rem 0 0;
+        color: var(--muted);
+        font-size: 0.925rem;
+      }
+      .link {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem;
+        margin-top: 1.1rem;
+      }
+      .chips span {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        padding: 0.15rem 0.5rem;
+        border-radius: 6px;
+        background: var(--card-2);
+        border: 1px solid var(--line);
         color: var(--muted);
       }
-      #msg {
-        margin-top: 1.25rem;
-        font-weight: 500;
-        color: var(--ink);
+
+      /* Boot status */
+      .status {
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 14px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        font-size: 0.9rem;
+        color: var(--muted);
       }
-      #msg.err {
+      .status[hidden] {
+        display: none;
+      }
+      .status.err {
+        color: var(--err);
+        background: var(--err-soft);
+        border-color: transparent;
+      }
+      .track {
+        height: 6px;
+        margin-top: 0.6rem;
+        border-radius: 999px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .track div {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        border-radius: inherit;
+        transition: width 0.4s ease;
+      }
+      .warn {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: var(--err-soft);
+        color: var(--err);
+        font-size: 0.85rem;
+      }
+      .warn[hidden] {
+        display: none;
+      }
+
+      /* Results */
+      .results {
+        margin-top: 2rem;
+      }
+      .results[hidden] {
+        display: none;
+      }
+      .results-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+      }
+      .results-head h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .results-head .actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      .btn.primary:hover {
+        filter: brightness(1.08);
+      }
+      .btn.ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+      .btn.ghost:hover {
+        color: var(--ink);
+        background: var(--card-2);
+      }
+      .btn.icon {
+        padding: 0.45rem;
+      }
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.6rem;
+      }
+      .item {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.8rem 0.9rem;
+      }
+      .ext {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        background: var(--accent-soft);
+        color: var(--accent);
+        flex: none;
+      }
+      .item.fail .ext {
+        background: var(--err-soft);
         color: var(--err);
       }
-      #msg.ok {
+      .info {
+        flex: 1;
+        min-width: 0;
+      }
+      .name {
+        font-weight: 600;
+        font-size: 0.925rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .meta {
+        font-size: 0.8rem;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .item.done .meta {
         color: var(--ok);
       }
-      #msg {
-        white-space: pre-line;
-      }
-      progress {
-        width: 100%;
-        margin-top: 0.75rem;
-        accent-color: var(--accent);
-      }
-      progress[hidden] {
-        display: none;
-      }
-      #warn {
-        margin-top: 0.75rem;
-        font-size: 0.875rem;
+      .item.fail .meta {
         color: var(--err);
+        white-space: normal;
       }
-      input {
+      .item .acts {
+        display: flex;
+        gap: 0.3rem;
+        flex: none;
+      }
+      .spin {
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--line);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .preview {
+        border-top: 1px solid var(--line);
+        background: var(--card-2);
+        margin: 0;
+        padding: 0.9rem 1rem;
+        max-height: 320px;
+        overflow: auto;
+        font:
+          0.8rem/1.55 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .preview[hidden] {
         display: none;
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      footer a {
+        color: inherit;
+      }
+      input[type="file"] {
+        display: none;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding-top: 2rem;
+        }
+        .row {
+          flex-wrap: wrap;
+        }
+        .item .acts {
+          width: 100%;
+          justify-content: flex-end;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation-duration: 2s !important;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="box" class="box off" tabindex="0" role="button">
-      <h1>Pilih atau tarik file ke sini</h1>
-      <p>PDF, Word, PowerPoint, Excel, HTML, CSV, dan lainnya</p>
-      <p id="msg" aria-live="polite">Menyiapkan halaman…</p>
-      <progress id="bar" max="1" value="0"></progress>
-      <p id="warn" hidden></p>
-      <input
-        id="f"
-        type="file"
-        multiple
-        accept=".pdf,.docx,.pptx,.xlsx,.xls,.html,.htm,.csv,.json,.xml,.txt,.epub,.zip"
-      />
-    </div>
+    <main>
+      <header>
+        <div class="logo" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V6l4 5 4-5v12"/><path d="M17 6v12"/><path d="m14 15 3 3 3-3"/></svg>
+        </div>
+        <h1>Konversi ke Markdown</h1>
+        <p class="sub">
+          Ubah dokumen PDF, Word, PowerPoint, Excel, dan lainnya menjadi file
+          <code>.md</code> yang rapi.
+        </p>
+        <span class="badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Diproses di browser, file tidak diunggah
+        </span>
+      </header>
+
+      <div id="box" class="drop" tabindex="0" role="button" aria-label="Pilih file untuk dikonversi">
+        <div class="drop-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
+        </div>
+        <h2>Tarik file ke sini</h2>
+        <p>atau <span class="link">pilih dari komputer</span>, bisa beberapa sekaligus</p>
+        <div class="chips" aria-hidden="true">
+          <span>PDF</span><span>DOCX</span><span>PPTX</span><span>XLSX</span><span>XLS</span><span>HTML</span><span>CSV</span><span>JSON</span><span>XML</span><span>TXT</span><span>EPUB</span><span>ZIP</span>
+        </div>
+        <input
+          id="f"
+          type="file"
+          multiple
+          accept=".pdf,.docx,.pptx,.xlsx,.xls,.html,.htm,.csv,.json,.xml,.txt,.epub,.zip"
+        />
+      </div>
+
+      <div id="status" class="status" aria-live="polite">
+        <span id="msg">Menyiapkan halaman…</span>
+        <div class="track"><div id="bar"></div></div>
+      </div>
+      <div id="warn" class="warn" hidden></div>
+
+      <section id="results" class="results" hidden>
+        <div class="results-head">
+          <h3 id="count">Hasil</h3>
+          <div class="actions">
+            <button id="clear" class="btn ghost" type="button">Bersihkan</button>
+            <button id="all" class="btn primary" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M4 20h16"/></svg>
+              Unduh semua
+            </button>
+          </div>
+        </div>
+        <ul id="list"></ul>
+      </section>
+
+      <footer>
+        Ditenagai oleh
+        <a href="https://github.com/microsoft/markitdown" target="_blank" rel="noopener">MarkItDown</a>
+        &amp;
+        <a href="https://pyodide.org/" target="_blank" rel="noopener">Pyodide</a>
+      </footer>
+    </main>
 
     <script type="text/worker" id="worker-src">
       const BASE = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
@@ -196,42 +560,60 @@ def convert_file(p): return _md.convert(p).text_content
       boot().catch((e) => post({ type: "bootfail", error: errText(e) }));
     </script>
     <script>
-      const box = document.getElementById("box"),
-        input = document.getElementById("f"),
-        msg = document.getElementById("msg"),
-        bar = document.getElementById("bar"),
-        warn = document.getElementById("warn");
+      const $ = (id) => document.getElementById(id);
+      const box = $("box"),
+        input = $("f"),
+        statusEl = $("status"),
+        msg = $("msg"),
+        bar = $("bar"),
+        warn = $("warn"),
+        results = $("results"),
+        list = $("list"),
+        count = $("count"),
+        allBtn = $("all");
       let ready = false,
         busy = false,
         seq = 0;
       const queue = [],
-        pending = new Map();
-      const say = (t, c = "") => {
-        msg.textContent = t;
-        msg.className = c;
-      };
-      const setBar = (v) => {
-        bar.hidden = v == null;
-        if (v != null) bar.value = v;
+        pending = new Map(),
+        items = [];
+
+      const ICON = {
+        dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M4 20h16"/></svg>',
+        copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+        eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+        x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
       };
 
+      const fmtSize = (n) =>
+        n < 1024
+          ? n + " B"
+          : n < 1048576
+            ? (n / 1024).toFixed(1) + " KB"
+            : (n / 1048576).toFixed(1) + " MB";
+      const mdName = (name) => name.replace(/\.[^.]+$/, "") + ".md";
+
+      function setStatus(text, progress, cls = "") {
+        statusEl.hidden = false;
+        statusEl.className = "status " + cls;
+        msg.textContent = text;
+        bar.parentElement.hidden = progress == null;
+        if (progress != null) bar.style.width = progress * 100 + "%";
+      }
+
+      /* ---------- Worker ---------- */
       const worker = new Worker(
         URL.createObjectURL(
-          new Blob([document.getElementById("worker-src").textContent], {
-            type: "text/javascript",
-          }),
+          new Blob([$("worker-src").textContent], { type: "text/javascript" }),
         ),
       );
 
       worker.onmessage = ({ data: m }) => {
         if (m.type === "progress") {
-          say(`(${m.step}/${m.total}) ${m.text}`);
-          setBar((m.step - 1) / m.total);
+          setStatus(`Menyiapkan (${m.step}/${m.total}): ${m.text}`, (m.step - 0.5) / m.total);
         } else if (m.type === "ready") {
           ready = true;
-          setBar(null);
-          box.classList.remove("off");
-          say("Siap. Pilih satu atau beberapa file.");
+          statusEl.hidden = true;
           if (m.failed.length) {
             warn.hidden = false;
             warn.textContent =
@@ -239,9 +621,9 @@ def convert_file(p): return _md.convert(p).text_content
               m.failed.join(", ") +
               "). Beberapa format mungkin tidak bisa dikonversi.";
           }
+          processQueue();
         } else if (m.type === "bootfail") {
-          setBar(null);
-          say("Halaman gagal dimuat: " + m.error + ". Muat ulang dan coba lagi.", "err");
+          setStatus("Halaman gagal dimuat: " + m.error + ". Muat ulang dan coba lagi.", null, "err");
         } else {
           const cb = pending.get(m.id);
           pending.delete(m.id);
@@ -250,7 +632,7 @@ def convert_file(p): return _md.convert(p).text_content
       };
       worker.onerror = (e) => {
         console.error(e);
-        say("Halaman gagal dimuat. Muat ulang dan coba lagi.", "err");
+        setStatus("Halaman gagal dimuat. Muat ulang dan coba lagi.", null, "err");
       };
 
       const convert = (file) =>
@@ -263,80 +645,172 @@ def convert_file(p): return _md.convert(p).text_content
             }),
         );
 
-      function download(name, text) {
+      /* ---------- Result list ---------- */
+      function addItem(file) {
+        const ext = (file.name.match(/\.([^.]+)$/) || [, "?"])[1].slice(0, 4).toUpperCase();
+        const li = document.createElement("li");
+        li.className = "item";
+        li.innerHTML = `
+          <div class="row">
+            <div class="ext"></div>
+            <div class="info"><div class="name"></div><div class="meta"></div></div>
+            <div class="acts"></div>
+          </div>
+          <pre class="preview" hidden></pre>`;
+        li.querySelector(".ext").textContent = ext;
+        li.querySelector(".name").textContent = file.name;
+        li.querySelector(".name").title = file.name;
+        list.append(li);
+        const it = { file, li, text: null, state: "wait" };
+        items.push(it);
+        render(it);
+        refreshHead();
+        return it;
+      }
+
+      function render(it) {
+        const meta = it.li.querySelector(".meta"),
+          acts = it.li.querySelector(".acts");
+        it.li.className = "item " + it.state;
+        acts.innerHTML = "";
+        if (it.state === "wait") {
+          meta.textContent = fmtSize(it.file.size) + " · menunggu";
+        } else if (it.state === "run") {
+          meta.innerHTML = '<span class="spin"></span>';
+          meta.append("Mengonversi…");
+        } else if (it.state === "done") {
+          meta.textContent = "Selesai · " + mdName(it.file.name) + " · " + fmtSize(new Blob([it.text]).size);
+          acts.append(
+            btn(ICON.eye, "Pratinjau", "btn ghost icon", () => {
+              const pre = it.li.querySelector(".preview");
+              if (pre.hidden && !pre.textContent)
+                pre.textContent = it.text.length > 20000 ? it.text.slice(0, 20000) + "\n\n… (pratinjau dipotong)" : it.text || "(kosong)";
+              pre.hidden = !pre.hidden;
+            }),
+            btn(ICON.copy, "Salin", "btn ghost icon", async (e) => {
+              const b = e.currentTarget;
+              try {
+                await navigator.clipboard.writeText(it.text);
+                b.title = "Tersalin!";
+                b.style.color = "var(--ok)";
+                setTimeout(() => ((b.title = "Salin"), (b.style.color = "")), 1500);
+              } catch (_) {}
+            }),
+            btn(ICON.dl + "Unduh", "Unduh " + mdName(it.file.name), "btn", () => download(it)),
+          );
+        } else if (it.state === "fail") {
+          meta.textContent = "Gagal: " + it.error;
+        }
+        if (it.state !== "run")
+          acts.append(btn(ICON.x, "Hapus dari daftar", "btn ghost icon", () => removeItem(it)));
+      }
+
+      function btn(html, label, cls, onclick) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = cls;
+        b.innerHTML = html;
+        b.title = label;
+        b.setAttribute("aria-label", label);
+        b.onclick = onclick;
+        return b;
+      }
+
+      function removeItem(it) {
+        const i = items.indexOf(it);
+        if (i < 0) return;
+        items.splice(i, 1);
+        const q = queue.indexOf(it);
+        if (q >= 0) queue.splice(q, 1);
+        it.li.remove();
+        refreshHead();
+      }
+
+      function refreshHead() {
+        const done = items.filter((i) => i.state === "done").length;
+        results.hidden = !items.length;
+        count.textContent = `Hasil · ${done}/${items.length} selesai`;
+        allBtn.disabled = done === 0;
+      }
+
+      function download(it) {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(
-          new Blob([text], { type: "text/markdown;charset=utf-8" }),
-        );
-        a.download = name.replace(/\.[^.]+$/, "") + ".md";
+        a.href = URL.createObjectURL(new Blob([it.text], { type: "text/markdown;charset=utf-8" }));
+        a.download = mdName(it.file.name);
         document.body.append(a);
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       }
 
-      async function enqueue(files) {
-        queue.push(...files);
-        if (!ready || busy || !queue.length) return;
-        busy = true;
-        box.classList.add("off");
-        const errors = [];
-        let ok = 0,
-          total = 0;
-        while (queue.length) {
-          const file = queue.shift();
-          total++;
-          say(`Mengonversi ${file.name}… (${total}/${total + queue.length})`);
-          setBar((total - 1) / (total + queue.length));
-          try {
-            const r = await convert(file);
-            if (r.type === "done") {
-              download(file.name, r.text);
-              ok++;
-            } else errors.push(file.name + ": " + r.error);
-          } catch (e) {
-            errors.push(file.name + ": " + (e.message || String(e)));
-          }
+      allBtn.onclick = async () => {
+        for (const it of items.filter((i) => i.state === "done")) {
+          download(it);
+          await new Promise((r) => setTimeout(r, 250));
         }
-        setBar(null);
-        if (!errors.length)
-          say(total > 1 ? `Selesai, ${ok} file .md sudah terunduh.` : "Selesai, file .md sudah terunduh.", "ok");
-        else
-          say(
-            (ok ? `${ok} berhasil, ` : "") + `${errors.length} gagal:\n` + errors.join("\n"),
-            "err",
-          );
-        busy = false;
-        box.classList.remove("off");
+      };
+      $("clear").onclick = () => items.filter((i) => i.state !== "run").forEach(removeItem);
+
+      /* ---------- Queue ---------- */
+      function enqueue(files) {
+        if (!files.length) return;
+        queue.push(...files.map(addItem));
+        processQueue();
       }
 
-      box.onclick = () => {
-        if (ready && !busy) input.click();
-      };
+      async function processQueue() {
+        if (!ready || busy) return;
+        busy = true;
+        while (queue.length) {
+          const it = queue.shift();
+          it.state = "run";
+          render(it);
+          try {
+            const r = await convert(it.file);
+            if (r.type === "done") {
+              it.text = r.text;
+              it.state = "done";
+            } else {
+              it.error = r.error;
+              it.state = "fail";
+            }
+          } catch (e) {
+            it.error = e.message || String(e);
+            it.state = "fail";
+          }
+          if (items.includes(it)) render(it);
+          refreshHead();
+        }
+        busy = false;
+      }
+
+      /* ---------- Input ---------- */
+      box.onclick = () => input.click();
       box.onkeydown = (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          box.click();
+          input.click();
         }
       };
       input.onchange = () => {
         enqueue([...input.files]);
         input.value = "";
       };
-      ["dragenter", "dragover"].forEach((t) =>
-        box.addEventListener(t, (e) => {
-          e.preventDefault();
-          box.classList.add("over");
-        }),
-      );
-      ["dragleave", "drop"].forEach((t) =>
-        box.addEventListener(t, (e) => {
-          e.preventDefault();
-          box.classList.remove("over");
-        }),
-      );
+      let depth = 0;
+      box.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        depth++;
+        box.classList.add("over");
+      });
+      box.addEventListener("dragover", (e) => e.preventDefault());
+      box.addEventListener("dragleave", () => {
+        if (--depth <= 0) (depth = 0), box.classList.remove("over");
+      });
       box.addEventListener("drop", (e) => {
-        if (ready && !busy) enqueue([...e.dataTransfer.files]);
+        e.preventDefault();
+        depth = 0;
+        box.classList.remove("over");
+        enqueue([...e.dataTransfer.files]);
       });
     </script>
   </body>
